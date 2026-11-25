@@ -397,7 +397,7 @@ func applyRateAndSpeed(opts *speakOptions, provider string) error {
 		}
 		return nil
 	}
-	if opts.speed <= 0.5 || opts.speed >= 2.0 {
+	if opts.speed < 0.5 || opts.speed > 2.0 {
 		if opts.rateWPM > 0 {
 			return fmt.Errorf("rate %d wpm maps to speed %.2f, which is outside the allowed 0.5–2.0 range", opts.rateWPM, opts.speed)
 		}

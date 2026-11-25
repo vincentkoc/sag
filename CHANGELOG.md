@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.6 - Unreleased
+## 0.4.7 - Unreleased
 
 ### Added
 - Deepgram Aura voice support with explicit provider selection, a live voice catalog, streaming PCM playback, and validated WAV output using a dedicated API key.
@@ -18,6 +18,16 @@
 - Add opt-in ChatGPT `--keep-alive` on Unix: prepare a fresh session during playback, reuse the in-memory voice catalog, and send narration over the active WebRTC channel to reduce repeat-request startup delay without reusing conversation history.
 - Reduce streaming PCM player startup buffering from 500 ms to 250 ms while retaining enough audio for macOS render blocks and delivery jitter; start the ChatGPT WebRTC audio clock before the data channel opens.
 - Avoid a blocked writer when buffered playback fails, honor cancellation while waiting for Oto startup, and report Oto playback errors.
+
+## 0.4.6 - 2026-11-15
+
+**Highlights:** Preserve 60db audio prefixes, accept the full documented speed range, and update the patched Go build toolchain.
+
+### Fixed
+- Preserve 60db PCM beginning with a brace or an MP3-like sync prefix, and accept the documented 0.5–2.0 speed endpoints. Thanks @SebTardif.
+
+### Changed
+- Update audio dependencies and build with patched Go 1.27.4 while retaining Go 1.25 support.
 
 ## 0.4.5 - 2026-10-23
 
