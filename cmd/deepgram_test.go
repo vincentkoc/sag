@@ -10,7 +10,29 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/steipete/sag/internal/deepgram"
 )
+
+func TestResolveVoiceShortCatalogID(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/models" {
+			t.Errorf("unexpected catalog path %s", r.URL.Path)
+		}
+		_, _ = io.WriteString(w, `{"tts":[
+			{"canonical_name":"aura-2-luna-en","metadata":{"display_name":"Luna"}},
+			{"canonical_name":"aura-2-orion-en","metadata":{"display_name":"aura-2-luna-en"}}
+		]}`)
+	}))
+	defer srv.Close()
+	client := deepgram.NewClient("test-key", srv.URL)
+	for _, input := range []string{"aura-2-luna-en", "LUNA"} {
+		id, err := resolveVoice(context.Background(), client, input, false)
+		if err != nil || id != "aura-2-luna-en" {
+			t.Errorf("resolveVoice(%q) = %q, %v; want aura-2-luna-en", input, id, err)
+		}
+	}
+}
 
 func TestDeepgramExplicitSelection(t *testing.T) {
 	resetProviderEnv(t)

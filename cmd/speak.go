@@ -755,27 +755,8 @@ func resolveVoice(ctx context.Context, client tts.VoiceCatalog, voiceInput strin
 		return "", nil
 	}
 
-	if forceID {
-		return voiceInput, nil
-	}
-
-	if looksLikeVoiceID(voiceInput) {
-		if containsDigit(voiceInput) {
-			return voiceInput, nil
-		}
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-		voices, err := client.ListVoices(ctx)
-		if err != nil {
-			return "", err
-		}
-		voiceInputLower := strings.ToLower(voiceInput)
-		for _, v := range voices {
-			if strings.ToLower(v.Name) == voiceInputLower {
-				fmt.Fprintf(os.Stderr, "using voice %s (%s)\n", v.Name, v.VoiceID)
-				return v.VoiceID, nil
-			}
-		}
+	idLike := looksLikeVoiceID(voiceInput)
+	if forceID || (idLike && containsDigit(voiceInput)) {
 		return voiceInput, nil
 	}
 
@@ -785,17 +766,24 @@ func resolveVoice(ctx context.Context, client tts.VoiceCatalog, voiceInput strin
 	if err != nil {
 		return "", err
 	}
+	// Catalog IDs are case-sensitive and can be shorter than the offline ID heuristic.
+	for _, v := range voices {
+		if v.VoiceID == voiceInput {
+			return v.VoiceID, nil
+		}
+	}
 	voiceInputLower := strings.ToLower(voiceInput)
 
-	// First, check for exact match (case-insensitive)
 	for _, v := range voices {
 		if strings.ToLower(v.Name) == voiceInputLower {
 			fmt.Fprintf(os.Stderr, "using voice %s (%s)\n", v.Name, v.VoiceID)
 			return v.VoiceID, nil
 		}
 	}
+	if idLike {
+		return voiceInput, nil
+	}
 
-	// Then, check for substring match (case-insensitive)
 	for _, v := range voices {
 		if strings.Contains(strings.ToLower(v.Name), voiceInputLower) {
 			fmt.Fprintf(os.Stderr, "using voice %s (%s)\n", v.Name, v.VoiceID)
