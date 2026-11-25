@@ -17,9 +17,13 @@ type Voice struct {
 	PreviewURL  string            `json:"preview_url"`
 }
 
-// VoiceCatalog is the minimal shared interface needed by existing commands.
+// VoiceCatalog lists and searches the voices available from a provider.
 type VoiceCatalog interface {
 	ListVoices(ctx context.Context) ([]Voice, error)
 	SearchVoices(ctx context.Context, search string, limit int) ([]Voice, error)
+}
+
+// VoiceDetails fetches metadata unavailable from a provider's catalog listing.
+type VoiceDetails interface {
 	GetVoice(ctx context.Context, voiceID string) (Voice, error)
 }

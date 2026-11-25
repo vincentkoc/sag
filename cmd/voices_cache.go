@@ -80,7 +80,7 @@ func saveVoiceCache(path string, cache *voiceCache) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-func hydrateVoices(ctx context.Context, client tts.VoiceCatalog, voices []tts.Voice, cache *voiceCache, ttl time.Duration) ([]tts.Voice, int) {
+func hydrateVoices(ctx context.Context, client tts.VoiceDetails, voices []tts.Voice, cache *voiceCache, ttl time.Duration) ([]tts.Voice, int) {
 	if ttl <= 0 {
 		ttl = voiceCacheTTL
 	}

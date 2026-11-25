@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Use the current ChatGPT, Deepgram, and OpenAI voice catalog directly for queries, label filters, and previews. This avoids a catalog lookup for every voice.
 - Recognize short voice IDs such as Deepgram's `aura-2-luna-en` when passed to `--voice`.
 - Start ElevenLabs streamed MP3 playback through Oto by default instead of waiting for the full file on macOS; preserve explicit player selection and reduce MP3 prebuffering to 250 ms.
 - Build with Go 1.27.4 and update `golang.org/x/net` to fix GO-2026-6859 and GO-2026-5942, including the WebRTC DNS path.

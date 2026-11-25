@@ -106,3 +106,32 @@ func TestSelectProvider_NeitherErrors(t *testing.T) {
 		t.Fatal("expected error when no API key is set")
 	}
 }
+
+func TestProviderVoiceDetails(t *testing.T) {
+	resetProviderEnv(t)
+	t.Setenv("SAG_CHATGPT_HOME", t.TempDir())
+	for _, provider := range []struct {
+		name, key  string
+		hasDetails bool
+	}{
+		{providerElevenLabs, "ELEVENLABS_API_KEY", true},
+		{providerSixtyDB, "SIXTYDB_API_KEY", true},
+		{providerOpenAI, "OPENAI_API_KEY", false},
+		{providerDeepgram, "DEEPGRAM_API_KEY", false},
+		{providerChatGPT, "", false},
+	} {
+		t.Run(provider.name, func(t *testing.T) {
+			if provider.key != "" {
+				t.Setenv(provider.key, "test-key")
+			}
+			cfg.Provider = provider.name
+			p, err := selectProvider()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := p.voiceDetails != nil; got != provider.hasDetails {
+				t.Errorf("voiceDetails present = %v, want %v", got, provider.hasDetails)
+			}
+		})
+	}
+}

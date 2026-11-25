@@ -9,9 +9,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/steipete/sag/internal/deepgram"
+	"github.com/steipete/sag/internal/tts"
 )
 
 func TestResolveVoiceShortCatalogID(t *testing.T) {
@@ -92,6 +95,68 @@ func TestDeepgramUnsupportedOptions(t *testing.T) {
 			rootCmd.SetArgs(append([]string{"speak", "--provider", "deepgram", "--base-url", "http://unused.invalid", "hello"}, args...))
 			if err := rootCmd.Execute(); err == nil || !strings.Contains(strings.ToLower(err.Error()), "deepgram") {
 				t.Fatalf("expected local option error: %v", err)
+			}
+		})
+	}
+}
+
+func TestVoicesUsesCatalogMetadata(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		args    []string
+		cached  bool
+		wantErr string
+	}{
+		{"query", []string{"--query", "warm"}, false, ""},
+		{"label", []string{"--label", "accent=Irish"}, false, ""},
+		{"missing preview", []string{"--try", "--limit", "1"}, false, "no previews played"},
+		{"fresh catalog overrides old cache", []string{"--label", "accent=Irish"}, true, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			resetProviderEnv(t)
+			resetRootCommandState()
+			t.Cleanup(resetRootCommandState)
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			t.Setenv("XDG_CACHE_HOME", home)
+			t.Setenv("LOCALAPPDATA", home)
+			t.Setenv("DEEPGRAM_API_KEY", "test-key")
+			if tc.cached {
+				path, err := voiceCachePath()
+				if err != nil {
+					t.Fatal(err)
+				}
+				cache := newVoiceCache()
+				cache.Voices["aura-2-luna-en"] = cachedVoice{
+					Voice:     tts.Voice{Labels: map[string]string{"accent": "French"}},
+					UpdatedAt: time.Now(),
+				}
+				if err := saveVoiceCache(path, cache); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var requests atomic.Int32
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests.Add(1)
+				if r.URL.Path != "/models" {
+					t.Errorf("unexpected path %s", r.URL.Path)
+				}
+				_, _ = io.WriteString(w, `{"tts":[
+					{"canonical_name":"aura-2-luna-en","metadata":{"accent":"Irish","tags":["warm"]}},
+					{"canonical_name":"aura-2-thalia-en","metadata":{}}
+				]}`)
+			}))
+			defer srv.Close()
+			rootCmd.SetArgs(append([]string{"voices", "--provider", "deepgram", "--base-url", srv.URL}, tc.args...))
+			var gotErr string
+			if err := rootCmd.Execute(); err != nil {
+				gotErr = err.Error()
+			}
+			if gotErr != tc.wantErr {
+				t.Fatalf("voices returned %q, want %q", gotErr, tc.wantErr)
+			}
+			if n := requests.Load(); n != 1 {
+				t.Errorf("got %d catalog requests, want 1", n)
 			}
 		})
 	}

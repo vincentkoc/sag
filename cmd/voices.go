@@ -81,7 +81,7 @@ func init() {
 			}
 
 			needsMeta := opts.query != "" || len(labelFilters) > 0 || opts.try
-			if needsMeta {
+			if needsMeta && provider.voiceDetails != nil {
 				cachePath, cacheErr := voiceCachePath()
 				if cacheErr != nil {
 					fmt.Fprintf(os.Stderr, "warning: voice cache disabled: %v\n", cacheErr)
@@ -97,7 +97,7 @@ func init() {
 				}
 
 				var metaCount int
-				voices, metaCount = hydrateVoices(cmd.Context(), client, voices, cache, voiceCacheTTL)
+				voices, metaCount = hydrateVoices(cmd.Context(), provider.voiceDetails, voices, cache, voiceCacheTTL)
 				if metaCount == 0 && (opts.query != "" || len(labelFilters) > 0) {
 					fmt.Fprintln(os.Stderr, "warning: voice metadata unavailable; matching on names only")
 				}
@@ -147,7 +147,7 @@ func init() {
 				var previewed int
 				for _, v := range voices {
 					fmt.Fprintf(os.Stderr, "preview: %s (%s)\n", v.Name, v.VoiceID)
-					if err := playVoicePreview(cmd.Context(), client, v); err != nil {
+					if err := playVoicePreview(cmd.Context(), provider.voiceDetails, v); err != nil {
 						fmt.Fprintf(os.Stderr, "preview failed for %s (%s): %v\n", v.Name, v.VoiceID, err)
 						continue
 					}
@@ -180,13 +180,13 @@ func filterVoicesByName(voices []tts.Voice, search string) []tts.Voice {
 	return filtered
 }
 
-func playVoicePreviewImpl(ctx context.Context, client tts.VoiceCatalog, voice tts.Voice) error {
+func playVoicePreviewImpl(ctx context.Context, details tts.VoiceDetails, voice tts.Voice) error {
 	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 
 	previewURL := strings.TrimSpace(voice.PreviewURL)
-	if previewURL == "" && voice.VoiceID != "" {
-		voiceDetails, err := client.GetVoice(ctx, voice.VoiceID)
+	if previewURL == "" && voice.VoiceID != "" && details != nil {
+		voiceDetails, err := details.GetVoice(ctx, voice.VoiceID)
 		if err != nil {
 			return err
 		}

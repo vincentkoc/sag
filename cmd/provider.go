@@ -22,8 +22,9 @@ const (
 )
 
 type activeProvider struct {
-	name   string
-	voices tts.VoiceCatalog
+	name         string
+	voices       tts.VoiceCatalog
+	voiceDetails tts.VoiceDetails
 
 	elevenlabs *elevenlabs.Client
 	sixtydb    *sixtydb.Client
@@ -110,9 +111,11 @@ func selectProvider() (activeProvider, error) {
 		case providerElevenLabs:
 			active.elevenlabs = elevenlabs.NewClient(key, cfg.BaseURL)
 			active.voices = active.elevenlabs
+			active.voiceDetails = active.elevenlabs
 		case providerSixtyDB:
 			active.sixtydb = sixtydb.NewClient(key, cfg.BaseURL)
 			active.voices = active.sixtydb
+			active.voiceDetails = active.sixtydb
 		case providerOpenAI:
 			active.openai = openai.NewClient(key, cfg.BaseURL)
 			active.voices = active.openai

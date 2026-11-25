@@ -28,7 +28,7 @@ sag voices --search "narrator"
 
 ## Semantic query
 
-`--query` ranks voices by similarity over **name + description + labels**, using the cached metadata. It’s great for vibes-based browsing.
+`--query` ranks voices by similarity over **name + description + labels**, using the metadata available from your provider.
 
 ```bash
 sag voices --query "crazy scientist" --limit 5
@@ -36,7 +36,7 @@ sag voices --query "warm grandmother bedtime story" --limit 5
 sag voices --query "calm british narrator" --limit 5 --try
 ```
 
-If the metadata cache hasn’t been hydrated yet, `sag` fetches detail pages on demand and prints `warning: voice metadata unavailable; matching on names only` when the API doesn’t return labels.
+ElevenLabs and 60db provide extra metadata for individual voices. For these providers, `sag` loads missing or expired details on demand. ChatGPT, Deepgram, and OpenAI supply their available metadata in the catalog itself.
 
 ## Label filters
 
@@ -82,7 +82,7 @@ export SAG_VOICE_ID=21m00Tcm4TlvDq8ikWAM
 
 ## Cache lifetime
 
-`sag voices --query` and `--label` cache the hydrated voice list for 24 hours. Location follows the OS config dir (`$XDG_CONFIG_HOME/sag/voices.json` on Linux, `~/Library/Application Support/sag/voices.json` on macOS, `%AppData%\sag\voices.json` on Windows). Delete the file to force a fresh fetch.
+`sag voices --query`, `--label`, and `--try` cache per-voice details for ElevenLabs and 60db for 24 hours. The file lives in the OS cache directory (`$XDG_CACHE_HOME/sag/voices.json` or `~/.cache/sag/voices.json` on Linux, `~/Library/Caches/sag/voices.json` on macOS, `%LocalAppData%\sag\voices.json` on Windows). Delete it to fetch those details again.
 
 ## Tips
 
